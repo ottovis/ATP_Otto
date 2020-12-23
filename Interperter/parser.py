@@ -3,19 +3,7 @@ from typing import Union
 import operator
 import math
 
-class error_type_base:
-    def __init__(self):
-        pass
-
-class error_type_invalid_operation(error_type_base):
-    def __init__(self, a : int, b : int, used_operator : operator):
-        self.a = a
-        self.b = b
-        self.used_operator = used_operator
-
-    def __str__(self):
-        return "invalid operation with " + self.a + " and " + self.b + " using: " self.used_operator
-
+from error_handler import *
 class symb_base:
     def execute(self):
         pass
@@ -30,11 +18,11 @@ class symb_operator(symb_base):
     def __init__(self, operator_to_exec) -> None:
         self.operator_to_exec = operator_to_exec
     
-    def execute(self, a : int, b : int) -> Union[int, error_type_invalid_operation]:
+    def execute(self, a: int, b: int) -> Union[int, InvalidOperatorError]:
         try:
             x = math.floor(self.operator_to_exec(a,b))
         except:
-            return error_type_invalid_operation(a, b)
+            raise InvalidOperatorError(a, b, self.operator_to_exec)
         return x
 
 class stack:
