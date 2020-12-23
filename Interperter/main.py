@@ -12,7 +12,7 @@ def main(file_contents: str) -> int:
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Please only add one argument pointing to the file")
+        print("Please give exactly argument pointing to the file to be executed")
         exit(-1)
 
     # try:

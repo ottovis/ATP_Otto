@@ -4,51 +4,75 @@ import operator
 import math
 
 from error_handler import *
-class symb_base:
-    def execute(self):
-        pass
-
-class symb_input:
-    pass
-
-class symb_output:
-    pass
-
-class symb_operator(symb_base):
-    def __init__(self, operator_to_exec) -> None:
-        self.operator_to_exec = operator_to_exec
-    
-    def execute(self, a: int, b: int) -> Union[int, InvalidOperatorError]:
-        try:
-            x = math.floor(self.operator_to_exec(a,b))
-        except:
-            raise InvalidOperatorError(a, b, self.operator_to_exec)
-        return x
-
-class stack:
-    def __init__(self):
-        self.ptr_to_stack = []
+from symbols import *
+from lexer import split
 
 
-def recurse_lexed(lexed : list, stack_obj : stack) -> Union[list, None]:
-    if len(list) == 0:
-        return None
+def tree_builder(lexed: list, parsed: list = [], is_toplevel: bool = True, is_main: bool = True) -> Union[list, Error]:
+    if len(lexed) == 0:
+        raise NoEndTokenError
     head, *tail = lexed
-    to_append = None
 
-    if type(head) == int:
-        pass
-    if type(head) == str:
+    assert type(head) is int or str
+
+    if type(head) is int:
+        parsed.append(symb_int(head))
+    elif type(head) is str:
         if head == "$$":
-            return None
-     
+            return parsed
+        elif head == '?':
+            parsed.append(symb_input())
+        elif head == '!':
+            parsed.append(symb_output())
+        elif head[0] == '\"':
+            assert head[-1] == '\"'
+            parsed.append(symb_string(head))
+        elif head == '+':
+            parsed.append(symb_operator(operator.add))
+        elif head == '-':
+            parsed.append(symb_operator(operator.sub))
+        elif head == '*':
+            parsed.append(symb_operator(operator.mul))
+        elif head == '/':
+            parsed.append(symb_operator(operator.truediv))
+        elif head == '$':
+            parsed.append(symb_stop())
+        elif head == '=':
+            parsed.append(symb_assignment())
+        elif head == '.':
+            parsed.append(symb_dereference())
+        elif head[0] == '[':
+            assert head[-1] == ']'
+            parsed.append(symb_conditional_execution(head))
+        elif head[0] == '(':
+            assert head[-1] == ')'
+            split_head = split(head[1:-1])
+            parsed.append(symb_loop(tree_builder(split_head, [], False, is_main)))
+        elif head == "^":
+            if is_toplevel:
+                raise BreakFromTopLevelError
+            parsed.append(symb_exit_loop())
+        elif head[0] == '#':
+            assert head[-1] == '$'
+            assert head[2] == ' ', 'current implemenation only supports 26 macros'
+            assert type(head[1]) is str
+            parsed.append(symb_macro(head[1], head))
+        elif head == '@':
+            if is_main:
+                raise BreakFromMainError
+            parsed.append(symb_exit_macro())
+        elif head[0] == '~':
+            assert len(
+                head) == 2, 'current implemenation only supports 26 macros'
+            assert type(head[1]) is str
+            parsed.append(symb_call_macro(head[1]))
+        else:
+            parsed.append(symb_var(head))
+
+    return tree_builder(tail, parsed, is_toplevel)
 
 
-
-
-def parser(lexed : list) -> list:
+def parser(lexed: list) -> list:
     parsed = []
+
     return parsed
-
-
-
