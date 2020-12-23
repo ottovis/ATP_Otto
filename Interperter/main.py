@@ -8,6 +8,7 @@ def main(file_contents: str) -> int:
     lexed = lexer(file_contents)
     parsed = parser(lexed)
     exit_code = excecute(parsed)
+    return exit_code
 
 
 if __name__ == "__main__":
@@ -22,4 +23,4 @@ if __name__ == "__main__":
     #     print("Try again with existing file")
     #     exit(-2)
 
-    main(file_contents)
+    print("Exit code:", main(file_contents))

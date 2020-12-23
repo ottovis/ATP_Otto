@@ -43,7 +43,8 @@ def tree_builder(lexed: list, parsed: list = [], is_toplevel: bool = True, is_ma
             parsed.append(symb_dereference())
         elif head[0] == '[':
             assert head[-1] == ']'
-            parsed.append(symb_conditional_execution(head))
+            split_head = split(head[1:-1])
+            parsed.append(symb_conditional_execution(tree_builder(split_head, [], False, is_main)))
         elif head[0] == '(':
             assert head[-1] == ')'
             split_head = split(head[1:-1])
@@ -55,8 +56,9 @@ def tree_builder(lexed: list, parsed: list = [], is_toplevel: bool = True, is_ma
         elif head[0] == '#':
             assert head[-1] == '$'
             assert head[2] == ' ', 'current implemenation only supports 26 macros'
-            assert type(head[1]) is str
-            parsed.append(symb_macro(head[1], head))
+            assert type(head[1]) is str, 'Only #A-Z are supported'
+            split_head = split(head[1:-1])
+            parsed.append(symb_macro(head[1], tree_builder(split_head, [], is_toplevel, False)))
         elif head == '@':
             if is_main:
                 raise BreakFromMainError

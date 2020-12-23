@@ -1,6 +1,7 @@
 from error_handler import *
 import operator
 from typing import Union, Tuple
+import math
 
 
 # base symbol class
