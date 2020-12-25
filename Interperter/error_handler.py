@@ -7,9 +7,9 @@ class Error(Exception):
 
 class InvalidOperatorError(Error):
     def __init__(self, a: int, b: int, used_operator: operator) -> None:
-        self.message = "invalid operation with " + a + \
-            "  and " + b + " using: " + used_operator
-        self.expression = str(a, operator, b)
+        self.message = "invalid operation with " + str(a) + \
+            "  and " + str(b) + " using: " + str(used_operator)
+        self.expression = str(a) + str(used_operator) + str(b) 
 
 
 class StringNotClosedError(Error):
@@ -25,7 +25,7 @@ class NoEndTokenError(Error):
 
 class CodeBlockNotClosedError(Error):
     def __init__(self, code_block: list):
-        self.message = "Code block: \"" + code_block + "\" not properly closed"
+        self.message = "Code block: \"", code_block, "\" not properly closed"
         self.expression = code_block
 
 class BreakFromTopLevelError(Error):

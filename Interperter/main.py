@@ -23,4 +23,8 @@ if __name__ == "__main__":
     #     print("Try again with existing file")
     #     exit(-2)
 
-    print("Exit code:", main(file_contents))
+    if len(file_contents) == 0:
+        print("Empty file!")
+        exit(-1)
+
+    print("\n", "Exit code:", main(file_contents))

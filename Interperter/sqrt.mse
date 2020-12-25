@@ -1,5 +1,1 @@
-#A "Dit is een Macro die deze zin print" $
-#B ? [ 5 + ! @ ] ! $
-
-N 1 =
-( N . N . * ! " " 10 N . - [ ^ ] N N . 1 + = ) ~A ~B $$
+N 1 = ( N . N . * ! " _ " 10 N . - [ ^ ] N N . 1 + = ) $$
