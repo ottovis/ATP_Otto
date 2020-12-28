@@ -54,7 +54,7 @@ class symb_output(symb_base):
         return "Symbol: " + symb_output.symb_type + ": " + symb_output.content
 
     def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, bool]:
-        print(stack.pop(), end="")
+        print(stack.pop())
         return 0, stack, var_dict, False
 
 # special symbols
@@ -74,7 +74,7 @@ class symb_string(symb_base):
         if len(to_print) == 0:
             return
         head, *tail = to_print
-        print(head, end=" ")
+        print(head, end="\n")
         return self.print_rec(tail)
 
     def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, bool]:
@@ -197,13 +197,16 @@ class symb_macro(symb_base):
     def __init__(self, callsign: str, codeblock: list) -> None:
         self.callsign = callsign
         self.content = codeblock
+        self.registered = False
 
     def __str__(self) -> str:
         return "Symbol: " + symb_macro.symb_type + ": " + str(self.callsign) + ", codeblock: " + str(self.content)
 
     def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, bool]:
-        var_dict['#' + self.callsign] = self
-        return 0, stack, var_dict, False
+        if not self.registered:
+            var_dict['#' + self.callsign] = self
+            self.registered = True
+        return exec_unit(self.content, stack, var_dict)
 
 
 class symb_exit_macro(symb_base):
