@@ -4,12 +4,13 @@ from typing import Tuple, Union
 
 
 def exec_unit(to_exec: list, stack: list = [], var_dict: dict = {}) -> Tuple[int, list, dict, bool]:
-    # print(stack)
+    # print("Stack:", stack)
+    # print("Dict:", var_dict)
     if len(to_exec) == 0:
         return 0, stack, var_dict, False
 
     head, *tail = to_exec
-    print("Excecuting:", head.content, "    ",head.symb_type)
+    # print("Excecuting:", head.content, "    ",head.symb_type)
     status, stack, var_dict, return_now = head.excecute(stack, var_dict)
     
     if not status == 0 or return_now:

@@ -124,9 +124,18 @@ class symb_assignment(symb_base):
     def __str__(self) -> str:
         return "Symbol: " + symb_assignment.symb_type + ": " + symb_assignment.content
 
-    def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, bool]:
+    def excecute(self, stack: list, var_dict: dict) -> Union[Tuple[int, list, dict, bool], Error]:
         *stack, b, a = stack
-        var_dict[b] = a
+        try:
+            int(b)
+        except:
+            raise InvalidAssignmentError(a, b)
+        try:
+            int(a)
+            raise InvalidAssignmentError(a, b)
+        except:
+            pass
+        var_dict[a] = b
         return 0, stack, var_dict, False
 
 
@@ -231,7 +240,6 @@ class symb_call_macro(symb_base):
         return "Symbol: " + symb_call_macro.symb_type + ": " + str(self.callsign)
 
     def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, bool]:
-        print(var_dict)
         var_dict['#' + self.callsign]
         status, stack, var_dict, return_now = exec_unit(var_dict['#' + self.callsign].content, stack, var_dict)
         return status, stack, var_dict, False
