@@ -1,71 +1,105 @@
 import functools
-from typing import Tuple, Union
+from typing import Tuple, Union, IO, Any, Dict
 
 
-def comp_unit(to_exec: list, code: dict, context: str = None, stack: list = [], var_dict: dict = {}) -> Tuple[int, list, list, dict, bool]:
-    # print("Stack:", stack)
-    # print("Dict:", var_dict)
+def comp_unit(to_exec: list, code: dict) -> Tuple[int, dict, bool]:
     if len(to_exec) == 0:
-        return 0, stack, var_dict, False
+        return 0, code, False
 
     head, *tail = to_exec
-    # print("Excecuting:", head.content, "    ",head.symb_type)
-    status, stack, var_dict, return_now = head.excecute(stack, var_dict)
+    # print("Compiling:", head.content, "    ",head.symb_type)
+    status, code, return_now = head.compile(code)
 
     if not status == 0 or return_now:
-        return status, stack, var_dict, return_now
+        return status, code, return_now
 
-    status, stack, var_dict, return_now = comp_unit(
-        tail, code, stack, var_dict)
-    return status, code, stack, var_dict, return_now
+    status, code, return_now = comp_unit(tail, code)
+    return status, code, return_now
 
 
 def gen_dict() -> dict:
     code = {}
+    code["main"] = {}
     # directives:
-    code["directive"] = []
-    code["directive"].append(".cpu cortex-m0")
-    code["directive"].append(".align 2")
-    code["directive"].append(".text")
-    code["directive"].append(".global application")
+    # general
+    code["main"]["directive"] = []
+    code["main"]["directive"].append(".cpu cortex-m0")
+    code["main"]["directive"].append(".align 4")
+    code["main"]["directive"].append(
+        ".global start print_asciz uart_print_int uart_get_int divide")
 
-    # strings:
-    code["strings"] = []
+    # bss
+    code["main"]["bss"] = []
+    code["main"]["bss"].append(".bss")
+    code["main"]["bss"].append("stack_alt: 1024")
+    code["main"]["bss"].append("var_lut: 64")
+
+    ## data / strings
+    code["main"]["strings"] = []
+    code["main"]["strings"].append(".data")
+
+    # text
+    code["main"]["text"] = []
+    code["main"]["text"].append(".text")
 
     # start application
-    code["start"] = []
-    code["start"].append("PUSH {LR, R4, R5, R6, R7}")
+    code["main"]["start"] = []
+    code["main"]["start"].append("start:")
+    code["main"]["start"].append("PUSH {LR, R4, R5, R6, R7}")
+    code["main"]["start"].append("MOV R4, SP")
+    code["main"]["start"].append("MOV SP, =stack_alt")
 
     # usercode
-    code["code"] = []
+    code["main"]["code"] = []
 
     # end application
-    code["end"] = []
-    code["end"].append("POP {PC, R4, R5, R6, R7}")
+    code["main"]["end"] = []
+    code["main"]["end"].append("MOV SP, R4")
+    code["main"]["end"].append("POP {PC, R4, R5, R6, R7}")
 
-    # macros
-    code["macros"] = {}
+    # # macros, no longer needed here
+    # code["macros"] = {}
+    # # TODO: Switch stack!!!
+
+    # no local vars in this lang
+    code["assignments"] = {}
 
     return code
 
 
-def printer(code: dict, name: str):
-    with open(name[:-4] + '.asm', mode='w') as f:
-        f.write('\n'.join(code["directive"]))
+def printer_marco(code: Dict[str, Dict[Any]], f: IO[Any], labels: list = None) -> None:
+    if labels is None:
+        head, *tail = code
+    if len(labels) == 0:
+        return
+    else:
+        head, *tail = labels
+    if head == "main":
+        printer_marco(code, f, tail)
+    f.write('\n'.join(code[head]["start"]))
+    f.write('\n'.join(code[head]["code"]))
+    f.write('\n'.join(code[head]["end"]))
+    printer_marco(code, f, tail)
+
+
+def printer(code: Dict[str, Dict], name: str):
+    # with open(name[:-4] + '.asm', mode='w') as f:
+    with open('gen.asm', mode='w') as f:
+        f.write('\n'.join(code["main"]["directive"]))
         f.write('\n')
-        f.write('\n'.join(code["strings"]))
+        f.write('\n'.join(code["main"]["bss"]))
         f.write('\n')
-        f.write('\n'.join(code["start"]))
+        f.write('\n'.join(code["main"]["strings"]))
         f.write('\n')
-        f.write('\n'.join(code["code"]))
+        f.write('\n'.join(code["main"]["text"]))
         f.write('\n')
-        f.write('\n'.join(code["end"]))
+        f.write('\n'.join(code["main"]["start"]))
         f.write('\n')
-        # Mag dit alsjebrief niet recursief, ik snap dat het voor de opdracht zelf moet
-        # maar hier is het gewoon irritant anders
-        for marco in code["macros"]:
-            f.write('\n'.join(marco))
-            f.write('\n')
+        f.write('\n'.join(code["main"]["code"]))
+        f.write('\n')
+        f.write('\n'.join(code["main"]["end"]))
+        f.write('\n')
+        printer_marco(code, f)
 
 
 def comp(parsed: list) -> Tuple[int, dict]:

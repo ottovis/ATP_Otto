@@ -1,9 +1,11 @@
 .cpu cortex-m0
+.bss
+stack_alt: 1024
+var_lut: 64
+
 .align 4
 .text
 .global application
-
-text1: .asciz "Hello world, the aANSWERzZ is 42! @[]`{}~" 
 
 
 application:

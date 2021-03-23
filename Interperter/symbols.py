@@ -27,6 +27,11 @@ class symb_int(symb_base):
         stack.append(self.content)
         return 0, stack, var_dict, False
 
+    def compile(self, code: dict, context: str) -> dict:
+        code[context]['code'].append('MOV R0 #' + str(self.content))
+        code[context]['code'].append('PUSH R0')
+        return code, context
+
 
 class symb_input(symb_base):
     symb_type = "input"
@@ -45,6 +50,11 @@ class symb_input(symb_base):
             return self.excecute(stack, var_dict)
         return 0, stack, var_dict, False
 
+    def compile(self, code: dict, context: str) -> dict:
+        code[context]['code'].append("BL uart_get_int")
+        code[context]['code'].append("PUSH R0")
+        return code, context
+
 
 class symb_output(symb_base):
     symb_type = "output"
@@ -57,6 +67,12 @@ class symb_output(symb_base):
         print(stack.pop())
         return 0, stack, var_dict, False
 
+    def compile(self, code: dict, context: str) -> dict:
+        code[context]['code'].append("POP R0")
+        code[context]['code'].append("BL uart_print_int")
+        return code, context
+
+
 # special symbols
 
 
@@ -66,6 +82,7 @@ class symb_string(symb_base):
     def __init__(self, string: str) -> None:
         split = string[1:-1].split('!')
         self.content = split
+        self.com_content = string
 
     def __str__(self) -> str:
         return "Symbol: " + symb_int.symb_type + ": " + str(self.content)
@@ -80,6 +97,13 @@ class symb_string(symb_base):
     def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, bool]:
         self.print_rec(self.content)
         return 0, stack, var_dict, False
+
+    def compile(self, code: dict, context: str) -> dict:
+        name = "text" + len(code[context]['strings'])
+        code[context]['strings'].append(name + ": .asciz " + self.com_content)
+        code[context]['code'].append("LDR R0, =" + name)
+        code[context]['code'].append("BL print_asciz")
+        return code, context
 
 
 class symb_operator(symb_base):
@@ -99,6 +123,22 @@ class symb_operator(symb_base):
             raise InvalidOperatorError(a, b, self.content)
         return 0, stack, var_dict, False
 
+    def compile(self, code: dict, context: str) -> dict:
+        code[context]['code'].append(r"POP {R0, R1}")
+        if self.content == operator.add:
+            code[context]['code'].append("ADD R2, R0, R1")
+        elif self.content == operator.mul:
+            code[context]['code'].append("MUL R2, R0, R1")
+        elif self.content == operator.sub:
+            code[context]['code'].append("SUB R2, R0, R1")
+        else:
+            # TODO: Dit wordt janken, div'en is kut
+            assert False
+
+        code[context]['code'].append("PUSH R2")
+
+        return code, context
+
 
 # class symb_exit(symb_base):
 #     symb_type = "exit"
@@ -116,27 +156,12 @@ class symb_stop(symb_base):
     def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, bool]:
         return 0, stack, var_dict, True
 
+    def compile(self, code: dict, context: str) -> dict:
+        assert False
+        # TODO: Add stack switching
 
-class symb_assignment(symb_base):
-    symb_type = "assignment"
-    content = "="
 
-    def __str__(self) -> str:
-        return "Symbol: " + symb_assignment.symb_type + ": " + symb_assignment.content
 
-    def excecute(self, stack: list, var_dict: dict) -> Union[Tuple[int, list, dict, bool], Error]:
-        *stack, b, a = stack
-        try:
-            int(b)
-        except:
-            raise InvalidAssignmentError(a, b)
-        try:
-            int(a)
-            raise InvalidAssignmentError(a, b)
-        except:
-            pass
-        var_dict[a] = b
-        return 0, stack, var_dict, False
 
 
 class symb_dereference(symb_base):
@@ -200,6 +225,7 @@ class symb_exit_loop(symb_base):
         return 0, stack, var_dict, True
 
 
+
 class symb_macro(symb_base):
     symb_type = "macro"
 
@@ -241,8 +267,13 @@ class symb_call_macro(symb_base):
 
     def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, bool]:
         var_dict['#' + self.callsign]
-        status, stack, var_dict, return_now = exec_unit(var_dict['#' + self.callsign].content, stack, var_dict)
+        status, stack, var_dict, return_now = exec_unit(
+            var_dict['#' + self.callsign].content, stack, var_dict)
         return status, stack, var_dict, False
+
+    def compile(self, code: dict, context: str) -> dict:
+        code[context]["code"].append("BL " + self.callsign)
+        return code, context
 
 
 class symb_var(symb_base):
@@ -257,3 +288,42 @@ class symb_var(symb_base):
     def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, bool]:
         stack.append(self.content)
         return 0, stack, var_dict, False
+
+    def compile(self, code: dict, context: str) -> dict:
+        if self.content not in code["assignments"]:
+            code["assignments"][self.content] = len(code["assignments"])
+
+        code[context]["code"].append(
+            "MOV R0, #" + code["assignments"][self.content])
+        code[context]["code"].append("PUSH R0")
+        return code, context
+
+
+class symb_assignment(symb_base):
+    symb_type = "assignment"
+    content = "="
+
+    def __str__(self) -> str:
+        return "Symbol: " + symb_assignment.symb_type + ": " + symb_assignment.content
+
+    def excecute(self, stack: list, var_dict: dict) -> Union[Tuple[int, list, dict, bool], Error]:
+        *stack, b, a = stack
+        try:
+            int(b)
+        except:
+            raise InvalidAssignmentError(a, b)
+        try:
+            int(a)
+            raise InvalidAssignmentError(a, b)
+        except InvalidAssignmentError:
+            assert False
+        except:
+            pass
+        var_dict[a] = b
+        return 0, stack, var_dict, False
+
+    def compile(self, code: dict, context: str) -> dict:
+        code[context]["code"].append(r"POP {R0, R1}")
+        code[context]["code"].append("MOV R2, =var_lut")
+        code[context]["code"].append("STR R1, [R2, R0]")
+        return code, context
