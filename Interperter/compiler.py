@@ -2,19 +2,19 @@ import functools
 from typing import Tuple, Union, IO, Any, Dict
 
 
-def comp_unit(to_exec: list, code: dict) -> Tuple[int, dict, bool]:
+def comp_unit(to_exec: list, code: dict, context: list = ["main"]) -> Tuple[dict, list]:
     if len(to_exec) == 0:
-        return 0, code, False
+        return code, context
 
     head, *tail = to_exec
     # print("Compiling:", head.content, "    ",head.symb_type)
-    status, code, return_now = head.compile(code)
+    code, context = head.compile(code, context)
 
-    if not status == 0 or return_now:
-        return status, code, return_now
+    if len(context) == 0:
+        return code, context
 
-    status, code, return_now = comp_unit(tail, code)
-    return status, code, return_now
+    return comp_unit(tail, code, context)
+    
 
 
 def gen_dict() -> dict:
@@ -57,28 +57,30 @@ def gen_dict() -> dict:
     code["main"]["end"].append("MOV SP, R4")
     code["main"]["end"].append("POP {PC, R4, R5, R6, R7}")
 
-    # # macros, no longer needed here
-    # code["macros"] = {}
-    # # TODO: Switch stack!!!
-
     # no local vars in this lang
     code["assignments"] = {}
+    code["loop_tracker"] = 0
+    code["curr_loop"] = []
 
     return code
 
 
-def printer_marco(code: Dict[str, Dict[Any]], f: IO[Any], labels: list = None) -> None:
-    if labels is None:
+def printer_marco(code: Dict[str, Dict[str, Any]], f: IO[Any], todo: list = None) -> None:
+    if todo is None:
         head, *tail = code
-    if len(labels) == 0:
+    elif len(todo) == 0:
         return
     else:
-        head, *tail = labels
-    if head == "main":
+        head, *tail = todo
+    if head == "main" or head == "assignments":
         printer_marco(code, f, tail)
+        return
     f.write('\n'.join(code[head]["start"]))
+    f.write('\n\n')
     f.write('\n'.join(code[head]["code"]))
+    f.write('\n\n')
     f.write('\n'.join(code[head]["end"]))
+    f.write('\n\n')
     printer_marco(code, f, tail)
 
 
@@ -86,28 +88,23 @@ def printer(code: Dict[str, Dict], name: str):
     # with open(name[:-4] + '.asm', mode='w') as f:
     with open('gen.asm', mode='w') as f:
         f.write('\n'.join(code["main"]["directive"]))
-        f.write('\n')
+        f.write('\n\n')
         f.write('\n'.join(code["main"]["bss"]))
-        f.write('\n')
+        f.write('\n\n')
         f.write('\n'.join(code["main"]["strings"]))
-        f.write('\n')
+        f.write('\n\n')
         f.write('\n'.join(code["main"]["text"]))
-        f.write('\n')
+        f.write('\n\n')
         f.write('\n'.join(code["main"]["start"]))
-        f.write('\n')
+        f.write('\n\n')
         f.write('\n'.join(code["main"]["code"]))
-        f.write('\n')
+        f.write('\n\n')
         f.write('\n'.join(code["main"]["end"]))
-        f.write('\n')
+        f.write('\n\n')
         printer_marco(code, f)
+            
 
 
-def comp(parsed: list) -> Tuple[int, dict]:
+def compiler(parsed: list) -> Tuple[list, dict]:
     code = gen_dict()
-    compiled = comp_unit(parsed, code)
-    return compiled[0], compiled[1]
-
-
-def compiler(parsed: list) -> Tuple[int, dict]:
-    exit_status, code = comp(parsed)
-    return exit_status, code
+    return comp_unit(parsed, code)

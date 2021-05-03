@@ -7,9 +7,9 @@ import sys
 def main(file_contents: str, name: str) -> int:
     lexed = lexer(file_contents)
     parsed = parser(lexed)
-    exit_code, compiled = compiler(parsed)
-    printer(compiled, name)
-    return exit_code
+    code, context = compiler(parsed)
+    printer(code, name)
+    return 1
 
 
 if __name__ == "__main__":
