@@ -15,32 +15,23 @@ PUSH {LR, R4, R5, R6, R7}
 MOV R4, SP
 MOV SP, =stack_alt
 
-MOV R0 #1 
+MOV R0, #5
 PUSH R0
-MOV R0 #2
-PUSH R0
-MOV R0 #3
-PUSH R0
-MOV R0 #4
-PUSH R0
-POP {R0, R1}
-ADD R2, R0, R1
-PUSH R2
-POP {R0, R1}
-ADD R2, R0, R1
-PUSH R2
-POP R0
-MOV R5, SP
-MOV SP, R4
-BL uart_print_int
-MOV R5, SP
-MOV SP, R4
-POP R0
-MOV R5, SP
-MOV SP, R4
-BL uart_print_int
-MOV R5, SP
-MOV SP, R4
+
+BL macro1
+
+macro1:
+MOV R7, LR
+
+
+
+
+
+
+marco1_end:
+MOV PC R7
+
+
 
 MOV SP, R4
 POP {PC, R4, R5, R6, R7}

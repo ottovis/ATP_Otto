@@ -1,5 +1,5 @@
 import operator
-from typing import Union, Tuple
+from typing import Union, Tuple, Any, List
 import math
 
 from error_handler import *
@@ -11,17 +11,17 @@ from compiler import comp_unit
 
 
 class symb_base:
-    
+
     _counter = 0
 
-    # Only allowed to switch when BL to and external function, 
+    # Only allowed to switch when BL to and external function,
     # else you can overwrite the altstack with old location
-    def switch_default_stack(self, code: dict, context: str) -> Tuple[dict, list]:
+    def switch_default_stack(self, code: dict, context: list) -> Tuple[dict, list]:
         code[context[-1]]["code"].append("MOV R5, SP")
         code[context[-1]]["code"].append("MOV SP, R4")
         return code, context
 
-    def switch_alt_stack(self, code: dict, context: str) -> Tuple[dict, list]:
+    def switch_alt_stack(self, code: dict, context: list) -> Tuple[dict, list]:
         code[context[-1]]["code"].append("MOV R5, SP")
         code[context[-1]]["code"].append("MOV SP, R4")
         return code, context
@@ -33,6 +33,7 @@ class symb_int(symb_base):
 
     def __init__(self, interger: int) -> None:
         super(symb_base)
+        assert type(interger) == int, "Int should be of type int"
         self.content = interger
 
     def __str__(self) -> str:
@@ -42,7 +43,7 @@ class symb_int(symb_base):
         stack.append(self.content)
         return 0, stack, var_dict, False
 
-    def compile(self, code: dict, context: str) -> dict:
+    def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         code[context[-1]]['code'].append('MOV R0 #' + str(self.content))
         code[context[-1]]['code'].append('PUSH R0')
         return code, context
@@ -53,7 +54,7 @@ class symb_input(symb_base):
     content = '?'
 
     def __str__(self) -> str:
-        return "Symbol: " + symb_input.symb_type + ": " + symb_input.content
+        return "Symbol: " + self.symb_type + ": " + symb_input.content
 
     def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, bool]:
         got = input("Input (int only): ")
@@ -65,7 +66,7 @@ class symb_input(symb_base):
             return self.excecute(stack, var_dict)
         return 0, stack, var_dict, False
 
-    def compile(self, code: dict, context: str) -> dict:
+    def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         code, context = self.switch_default_stack(code, context)
         code[context[-1]]['code'].append("BL uart_get_int")
         code, context = self.switch_default_stack(code, context)
@@ -78,13 +79,13 @@ class symb_output(symb_base):
     content = '!'
 
     def __str__(self) -> str:
-        return "Symbol: " + symb_output.symb_type + ": " + symb_output.content
+        return "Symbol: " + self.symb_type + ": " + symb_output.content
 
     def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, bool]:
         print(stack.pop())
         return 0, stack, var_dict, False
 
-    def compile(self, code: dict, context: str) -> dict:
+    def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         code[context[-1]]['code'].append("POP R0")
         code, context = self.switch_default_stack(code, context)
         code[context[-1]]['code'].append("BL uart_print_int")
@@ -104,7 +105,7 @@ class symb_string(symb_base):
         self.com_content = string
 
     def __str__(self) -> str:
-        return "Symbol: " + symb_int.symb_type + ": " + str(self.content)
+        return "Symbol: " + self.symb_type + ": " + str(self.content)
 
     def print_rec(self, to_print: list) -> None:
         if len(to_print) == 0:
@@ -117,9 +118,9 @@ class symb_string(symb_base):
         self.print_rec(self.content)
         return 0, stack, var_dict, False
 
-    def compile(self, code: dict, context: str) -> dict:
-        name = "text" + str(len(code[context[-1]]['strings']))
-        code[context[-1]
+    def compile(self, code: dict, context: list) -> Tuple[dict, list]:
+        name = "text" + str(len(code["main"]['strings']))
+        code["main"
              ]['strings'].append(name + ": .asciz " + self.com_content)
         code[context[-1]]['code'].append("LDR R0, =" + name)
         code, context = self.switch_default_stack(code, context)
@@ -132,6 +133,7 @@ class symb_operator(symb_base):
     symb_type = "operator"
 
     def __init__(self, operator_to_exec: operator) -> None:
+        self.content : Any
         self.content = operator_to_exec
 
     def __str__(self) -> str:
@@ -145,7 +147,7 @@ class symb_operator(symb_base):
             raise InvalidOperatorError(a, b, self.content)
         return 0, stack, var_dict, False
 
-    def compile(self, code: dict, context: str) -> dict:
+    def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         code[context[-1]]['code'].append("POP {R0, R1}")
         if self.content == operator.add:
             code[context[-1]]['code'].append("ADD R2, R0, R1")
@@ -181,7 +183,7 @@ class symb_stop(symb_base):
     def compile(self, code: dict, context: list) -> dict:
         code[context[-1]]['code'].append("MOV R5, SP")
         code[context[-1]]['code'].append("MOV SP, R4")
-        code[context[-1]]['code'].append("POP { PC }")
+        code[context[-1]]['code'].append("POP PC")
         context.pop()
         assert False
         # TODO: Add stack switching
@@ -200,8 +202,11 @@ class symb_dereference(symb_base):
         stack.append(var_dict[a])
         return 0, stack, var_dict, False
 
-    def compile(self, code: dict, context: list) -> dict:
-
+    def compile(self, code: dict, context: list) -> Tuple[dict, list]:
+        code[context[-1]]['code'].append("POP R0")
+        code[context[-1]]["code"].append("MOV R2, =var_lut")
+        code[context[-1]]['code'].append("LDR R1 [R2, R0]")
+        code[context[-1]]['code'].append("PUSH R1")
         return code, context
 
 
@@ -209,8 +214,9 @@ class symb_conditional_execution(symb_base):
     symb_type = "conditional_execution"
 
     def __init__(self, codeblock: list) -> None:
-        symb_base._counter += 1
         self.content = codeblock
+        self.callsign = "conditinal" + str(symb_base._counter)
+        symb_base._counter += 1
 
     def __str__(self) -> str:
         return "Symbol: " + symb_conditional_execution.symb_type + ": " + str(self.content)
@@ -223,14 +229,51 @@ class symb_conditional_execution(symb_base):
             return status, stack, var_dict, return_now
 
         return 0, stack, var_dict, False
+    
+    def compile(self, code: dict, context: list) -> Tuple[dict, list]:
+        if self.callsign in code:
+            code[context[-1]]["code"].append("BL " + self.callsign)
+            context.append(self.callsign)
+            return comp_unit(self.content, code, context)
+        else:
+            code[context[-1]]["code"].append("BL " + self.callsign)
+
+            context.append(self.callsign)
+
+            code[context[-1]] = {}
+            code[context[-1]]["start"] = []
+            code[context[-1]]["code"] = []
+            code[context[-1]]["end"] = []
+
+            code[context[-1]]["start"].append(self.callsign + ":")
+            code, context = self.switch_default_stack(code, context)
+            code[context[-1]]["start"].append("PUSH LR")
+            code, context = self.switch_alt_stack(code, context)
+            code[context[-1]]["start"].append("POP R0")
+            code[context[-1]]["start"].append("CMP R0, #0")
+            code[context[-1]]["start"].append("BEQ " + self.callsign + "_end")
+
+            code[context[-1]]["end"].append(self.callsign + "_end:")
+            code, context = self.switch_default_stack(code, context)
+            code[context[-1]]["end"].append("MOV PC, R7")
+            code, context = self.switch_alt_stack(code, context)
+
+            code, context = comp_unit(self.content, code, context)
+            if context[-1] == self.callsign:
+                context.pop()
+                print("Warning: needed to close symb_conditional_execution, should never be nessesary")
+            if self.callsign in context:
+                assert False, "Code inside should exit on its own "
+            return code, context
 
 
 class symb_loop(symb_base):
     symb_type = "loop"
 
     def __init__(self, codeblock: list) -> None:
-        symb_base._counter += 1
+        self.callsign = "loop" + str(symb_base._counter)
         self.content = codeblock
+        symb_base._counter += 1
 
     def __str__(self) -> str:
         return "Symbol: " + symb_loop.symb_type + ": " + str(self.content)
@@ -243,34 +286,39 @@ class symb_loop(symb_base):
         else:
             return self.excecute(stack, var_dict)
 
-    def compile(self, code: dict, context: list) -> dict:
+    def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         if self.callsign in code:
             code[context[-1]]["code"].append("BL " + self.callsign)
             context.append(self.callsign)
             return comp_unit(self.content, code, context)
         else:
             code[context[-1]]["code"].append("BL " + self.callsign)
-            code[context[-1]]["code"].append("BL " + self.callsign)
 
             context.append(self.callsign)
 
-            code[self.callsign] = {}
-            code[self.callsign]["start"] = []
-            code[self.callsign]["code"] = []
-            code[self.callsign]["end"] = []
+            code[context[-1]] = {}
+            code[context[-1]]["start"] = []
+            code[context[-1]]["code"] = []
+            code[context[-1]]["end"] = []
 
-            code[self.callsign]["start"].append(self.callsign + ":")
-            code[self.callsign]["start"].append("MOV R7, LR")
+            code[context[-1]]["start"].append(self.callsign + ":")
+            code, context = self.switch_default_stack(code, context)
+            code[context[-1]]["start"].append("PUSH LR")
+            code, context = self.switch_alt_stack(code, context)
+            code[context[-1]]["start"].append(self.callsign + "_start:")
 
-            code[self.callsign]["end"].append("MOV PC, R7")
+            code[context[-1]]["end"].append("B " + self.callsign + "_start:")
+            code[context[-1]]["end"].append(self.callsign + "_end:")
+            code, context = self.switch_default_stack(code, context)
+            code[context[-1]]["end"].append("POP PC")
+            code, context = self.switch_alt_stack(code, context)
+
             code, context = comp_unit(self.content, code, context)
-            assert context[-1] != self.callsign, "Macro must exit using @"
-            return code, context
-
-
-        code[context[-1]]["code"].append("start_loop" + str(code["loop_tracker"] + ":"))
-        code["curr_loop"].append(code["loop_tracker"])
-        code["loop_tracker"] += 1
+            if context[-1] == self.callsign:
+                context.pop()
+                print("Warning: needed to close symb_loop, should never be nessesary")
+            if self.callsign in context:
+                assert False, "Code inside should exit on its own"
         return code, context
 
 
@@ -283,7 +331,18 @@ class symb_exit_loop(symb_base):
 
     def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, bool]:
         return 0, stack, var_dict, True
-
+    
+    def compile(self, code: dict, context: list) -> Tuple[dict, list]:
+        if context[-1][0:4] == "loop":
+            assert context[-1] != "main", "Cant use exit loop to exit main program"
+            context.pop()
+            return code, context
+        
+        else:
+            assert context[-1] != "main", "Cant use exit loop to exit main program"
+            context.pop()
+            return self.compile(code, context)
+        
 
 class symb_macro(symb_base):
     symb_type = "macro"
@@ -302,7 +361,7 @@ class symb_macro(symb_base):
             self.registered = True
         return exec_unit(self.content, stack, var_dict)
 
-    def compile(self, code: dict, context: list) -> dict:
+    def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         if self.callsign in code:
             code[context[-1]]["code"].append("BL " + self.callsign)
             context.append(self.callsign)
@@ -321,6 +380,7 @@ class symb_macro(symb_base):
             code[self.callsign]["start"].append(self.callsign + ":")
             code[self.callsign]["start"].append("MOV R7, LR")
 
+            code[self.callsign]["end"].append(self.callsign + "_end:")
             code[self.callsign]["end"].append("MOV PC, R7")
             code, context = comp_unit(self.content, code, context)
             assert context[-1] != self.callsign, "Macro must exit using @"
@@ -337,7 +397,7 @@ class symb_exit_macro(symb_base):
     def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, bool]:
         return 0, stack, var_dict, True
 
-    def compile(self, code: dict, context: list) -> dict:
+    def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         assert context[-1] != "main", "Attempted to use @ to exit main"
         context.pop()
         return code, context
@@ -353,13 +413,13 @@ class symb_call_macro(symb_base):
     def __str__(self) -> str:
         return "Symbol: " + symb_call_macro.symb_type + ": " + str(self.callsign)
 
-    def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, bool]:
-        # var_dict['#' + self.callsign] 
+    def excecute(self, stack: List[str], var_dict: dict) -> Tuple[int, list, dict, bool]:
+        # var_dict['#' + self.callsign]
         status, stack, var_dict, return_now = exec_unit(
             var_dict['#' + self.callsign].content, stack, var_dict)
         return status, stack, var_dict, False
 
-    def compile(self, code: dict, context: str) -> dict:
+    def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         code[context[-1]]["code"].append("BL " + self.callsign)
         return code, context
 
@@ -377,12 +437,11 @@ class symb_var(symb_base):
         stack.append(self.content)
         return 0, stack, var_dict, False
 
-    def compile(self, code: dict, context: str) -> dict:
+    def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         if self.content not in code["assignments"]:
-            code["assignments"][self.content] = len(code["assignments"])
+            code["assignments"][self.content] = "var" + str(len(code["assignments"]))
 
-        code[context[-1]
-             ]["code"].append("MOV R0, #" + code["assignments"][self.content])
+        code[context[-1]]["code"].append("MOV R0, #" + str(code["assignments"][self.content]))
         code[context[-1]]["code"].append("PUSH R0")
         return code, context
 
@@ -410,7 +469,7 @@ class symb_assignment(symb_base):
         var_dict[a] = b
         return 0, stack, var_dict, False
 
-    def compile(self, code: dict, context: str) -> dict:
+    def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         code[context[-1]]["code"].append("POP {R0, R1}")
         code[context[-1]]["code"].append("MOV R2, =var_lut")
         code[context[-1]]["code"].append("STR R1, [R2, R0]")

@@ -1,4 +1,6 @@
-"Printing first 10 in fibonacci:" 5 todo = 1 1 "0" 
+10 todo = #A #B ~A
+
+"Printing first 100 in fibonacci:" 19 todo = 1 1 "0" 
 #A to_save = to_print = to_save . to_save . to_print . + to_print . !
 todo . 1 - todo = todo . [ @ ] ~A $ 
 $$ 

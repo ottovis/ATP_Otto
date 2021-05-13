@@ -2,7 +2,11 @@ import functools
 from typing import Tuple, Union, IO, Any, Dict
 
 
-def comp_unit(to_exec: list, code: dict, context: list = ["main"]) -> Tuple[dict, list]:
+def comp_unit(to_exec: list, code: dict, context: list = ["main"], base_context : str = None) -> Tuple[dict, list]:
+
+    if base_context is None:
+        base_context = context[-1]
+
     if len(to_exec) == 0:
         return code, context
 
@@ -10,10 +14,14 @@ def comp_unit(to_exec: list, code: dict, context: list = ["main"]) -> Tuple[dict
     # print("Compiling:", head.content, "    ",head.symb_type)
     code, context = head.compile(code, context)
 
-    if len(context) == 0:
+    if base_context not in context:
         return code, context
 
-    return comp_unit(tail, code, context)
+    if len(context) == 0:
+        print("Warning, exited comp_unit by empty context")
+        return code, context
+
+    return comp_unit(tail, code, context, base_context)
     
 
 

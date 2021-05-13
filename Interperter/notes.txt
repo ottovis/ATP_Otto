@@ -1,0 +1,20 @@
+3 structuren:
+- loop
+- macro
+- cond execution
+
+loop aanroep met BL?
+loop interne aanroep met B
+loop inline, context niet aanpassen 
+-> voor en na comp_unit openen sluiten
+status voor huidge loop nodig voor loop exit
+loop exit moet dus comp_unit kunnen laten returnen == FALSE
+zolang de b exit er maar in zit komt het goed
+
+cond exec 
+Zelfde als bovenstaande voor en na comp_unit de wrapper
+
+macro aanroep met BL
+fallthrough 
+
+TODO: Wat gebeurt er met 2 ( @A 1 ^ ) ~A 

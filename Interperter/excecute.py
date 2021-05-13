@@ -16,8 +16,7 @@ def exec_unit(to_exec: list, stack: list = [], var_dict: dict = {}) -> Tuple[int
     if not status == 0 or return_now:
         return status, stack, var_dict, return_now
 
-    status, stack, var_dict, return_now = exec_unit(tail, stack, var_dict)
-    return status, stack, var_dict, return_now
+    return exec_unit(tail, stack, var_dict)
     
 
 def exec(parsed: list) -> int:
