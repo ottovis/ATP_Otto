@@ -3,20 +3,25 @@ from typing import Tuple, Union
 
 
 
-def exec_unit(to_exec: list, stack: list = [], var_dict: dict = {}) -> Tuple[int, list, dict, bool]:
+def exec_unit(to_exec: list, stack: list = [], var_dict: dict = {}, unit_type: str = "main") -> Tuple[int, list, dict, Union[None, str]]:
     # print("Stack:", stack)
     # print("Dict:", var_dict)
     if len(to_exec) == 0:
-        return 0, stack, var_dict, False
+        print("Test")
+        return 0, stack, var_dict, None
 
     head, *tail = to_exec
     # print("Excecuting:", head.content, "    ",head.symb_type)
-    status, stack, var_dict, return_now = head.excecute(stack, var_dict)
+    status, stack, var_dict, return_type = head.excecute(stack, var_dict)
     
-    if not status == 0 or return_now:
-        return status, stack, var_dict, return_now
+    if not status == 0 or return_type == unit_type:
+        print("Exit by exit symb")
+        return status, stack, var_dict, None
+    
+    elif return_type is not None:
+        return status, stack, var_dict, return_type
 
-    return exec_unit(tail, stack, var_dict)
+    return exec_unit(tail, stack, var_dict, unit_type)
     
 
 def exec(parsed: list) -> int:

@@ -21,9 +21,11 @@ from symbols import *
 #         return get_block(tail, to_find, output_list)
 
 
-def get_string(input_list: list, string: str = "") -> Union[Tuple[list, str], Error]:
+def get_string(input_list: list, string: str = "") -> Union[Tuple[str, list], Error]:
     if (len(input_list) == 0):
         raise StringNotClosedError(string)
+    head:str
+    tail:list
     head, *tail = input_list
     if head[-1] == "\"":
         return  string + head, tail
@@ -34,8 +36,10 @@ def get_string(input_list: list, string: str = "") -> Union[Tuple[list, str], Er
 
 def __split(to_split: list, to_find: Union[str, list] = None) -> Union[Error, Tuple[list, list]]:
     to_remove = [' ']
-
-    head, *tail = to_split
+    try:
+        head, *tail = to_split
+    except:
+        assert False
     if len(tail) == 0 or head == to_find:
         return [head], tail
 

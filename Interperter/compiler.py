@@ -113,6 +113,7 @@ def printer(code: Dict[str, Dict], name: str):
             
 
 
-def compiler(parsed: list) -> Tuple[list, dict]:
+def compiler(parsed: list) -> Tuple[dict, list]:
+    code : dict
     code = gen_dict()
     return comp_unit(parsed, code)
