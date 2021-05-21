@@ -7,7 +7,6 @@ def exec_unit(to_exec: list, stack: list = [], var_dict: dict = {}, unit_type: s
     # print("Stack:", stack)
     # print("Dict:", var_dict)
     if len(to_exec) == 0:
-        print("Test")
         return 0, stack, var_dict, None
 
     head, *tail = to_exec

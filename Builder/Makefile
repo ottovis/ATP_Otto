@@ -9,15 +9,15 @@
 #############################################################################
 
 # source files in this project (main.cpp is automatically assumed)
-SOURCES := generated.asm
+SOURCES := gen.asm
 
 # header files in this project
-HEADERS := 
+HEADERS := main.hpp
 
 # other places to look for files for this project
 SEARCH  := 
 
-# set REATIVE to the next higher directory 
-# and defer to the Makefile.due there
-RELATIVE := $(RELATIVE)../
-include $(RELATIVE)Makefile.due
+# set RELATIVE to the next higher directory 
+# and defer to the Makefile.* there
+RELATIVE := ..
+include $(RELATIVE)/Makefile.due

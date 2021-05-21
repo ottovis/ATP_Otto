@@ -2,7 +2,7 @@ import functools
 from typing import Tuple, Union, IO, Any, Dict
 
 
-def comp_unit(to_exec: list, code: dict, context: list = ["main"], base_context : str = None) -> Tuple[dict, list]:
+def comp_unit(to_exec: list, code: dict, context: list = ["main"], base_context : str = None, loop : str = None) -> Tuple[dict, list]:
 
     if base_context is None:
         base_context = context[-1]
@@ -34,13 +34,15 @@ def gen_dict() -> dict:
     code["main"]["directive"].append(".cpu cortex-m0")
     code["main"]["directive"].append(".align 4")
     code["main"]["directive"].append(
-        ".global start print_asciz uart_print_int uart_get_int divide")
+        ".global application, start, print_asciz, uart_print_int, uart_get_int, divide")
 
     # bss
     code["main"]["bss"] = []
     code["main"]["bss"].append(".bss")
-    code["main"]["bss"].append("stack_alt: 1024")
-    code["main"]["bss"].append("var_lut: 64")
+    code["main"]["bss"].append("stack_alt:")
+    code["main"]["bss"].append(".skip 1024")
+    code["main"]["bss"].append("var_lut:")
+    code["main"]["bss"].append(".skip 64")
 
     ## data / strings
     code["main"]["strings"] = []
@@ -52,10 +54,11 @@ def gen_dict() -> dict:
 
     # start application
     code["main"]["start"] = []
-    code["main"]["start"].append("start:")
-    code["main"]["start"].append("PUSH {LR, R4, R5, R6, R7}")
+    code["main"]["start"].append("application:")
+    code["main"]["start"].append("PUSH {R4, R5, R6, R7, LR}")
     code["main"]["start"].append("MOV R4, SP")
-    code["main"]["start"].append("MOV SP, =stack_alt")
+    code["main"]["start"].append("LDR R6, =stack_alt")
+    code["main"]["start"].append("MOV SP, R6")
 
     # usercode
     code["main"]["code"] = []
@@ -63,7 +66,7 @@ def gen_dict() -> dict:
     # end application
     code["main"]["end"] = []
     code["main"]["end"].append("MOV SP, R4")
-    code["main"]["end"].append("POP {PC, R4, R5, R6, R7}")
+    code["main"]["end"].append("POP {R4, R5, R6, R7, PC}")
 
     # no local vars in this lang
     code["assignments"] = {}
@@ -80,9 +83,10 @@ def printer_marco(code: Dict[str, Dict[str, Any]], f: IO[Any], todo: list = None
         return
     else:
         head, *tail = todo
-    if head == "main" or head == "assignments":
+    if head == "main" or head == "assignments" or head == "loop_tracker" or head == "curr_loop":
         printer_marco(code, f, tail)
         return
+        
     f.write('\n'.join(code[head]["start"]))
     f.write('\n\n')
     f.write('\n'.join(code[head]["code"]))

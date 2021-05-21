@@ -24,9 +24,9 @@ from symbols import *
 def get_string(input_list: list, string: str = "") -> Union[Tuple[str, list], Error]:
     if (len(input_list) == 0):
         raise StringNotClosedError(string)
-    head:str
-    tail:list
+    print(input_list)
     head, *tail = input_list
+    
     if head[-1] == "\"":
         return  string + head, tail
     else:
@@ -44,7 +44,11 @@ def __split(to_split: list, to_find: Union[str, list] = None) -> Union[Error, Tu
         return [head], tail
 
     if head[0] == "\"":
-        head, tail = get_string(to_split)
+        print(head, "test")
+        if head[-1] != "\"" or len(head) <= 1:
+            newHead, tail = get_string(tail)
+            head = head + " " + newHead
+        # head = head.replace("!", "\n") #breaks the printer
 
     if head == "(":
         head, tail = __split(tail, ")")
@@ -72,17 +76,17 @@ def split(to_split: list)-> Union[Error, list]:
 def preprocessor(file_contents: str) -> Union[list, Error]:
     # Convert to list
     input_list = file_contents.split()
-    print(input_list)
+    # print(input_list)
 
     # Remove spaces and enters.
     split_chars = split(input_list)
-    print(split_chars)
+    # print(split_chars)
 
     # Return preprocessed input
     return split_chars
 
 
-def tokenize(processed: list) -> list:
+def tokenize(processed: list) -> Union[list, Error]:
     return processed
 
 

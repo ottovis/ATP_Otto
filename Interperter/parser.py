@@ -14,7 +14,7 @@ def tree_builder(lexed: list, parsed: list = [], is_toplevel: bool = True, is_ma
     head, *tail = lexed
 
     try:
-        head = int(head)
+        head = int(head) # Make int if possible, this does break pylance's typechecking
     except:
         pass
 
@@ -75,6 +75,7 @@ def tree_builder(lexed: list, parsed: list = [], is_toplevel: bool = True, is_ma
             parsed.append(symb_loop(build))
         elif head[0][0] == '#':
             assert head[-1] == '$'
+            assert head[-2] == '@', "The $ is end of macro block, but the @ is needed to return"
             assert len(head[0]) == 2
             assert type(head[0][1]) is str, 'Only #A-Z are supported'
             assert type(head) == list

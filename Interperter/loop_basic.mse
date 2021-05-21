@@ -1,0 +1,1 @@
+10 to_do = ( to_do . ! to_do . 1 - to_do = to_do . [ ^ ] ) "Done"
