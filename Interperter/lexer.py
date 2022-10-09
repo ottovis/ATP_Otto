@@ -4,9 +4,12 @@ import operator
 import math
 import csv
 
-from error_handler import *
-from symbols import *
-
+try:
+    from Interperter.mse_error_handler import *
+    from Interperter.symbols import *
+except:
+    from mse_error_handler import *
+    from symbols import *
 
 # def get_block(input_list: list, to_find: str, output_list: list = []) -> Union[Tuple[list, list], Error]:
 #     if (len(input_list) == 0):
@@ -21,10 +24,10 @@ from symbols import *
 #         return get_block(tail, to_find, output_list)
 
 
-def get_string(input_list: list, string: str = "") -> Union[Tuple[str, list], Error]:
+def get_string(input_list: list, string: str = "") -> Tuple[str, list]:
     if (len(input_list) == 0):
         raise StringNotClosedError(string)
-    print(input_list)
+    # print(input_list)
     head, *tail = input_list
     
     if head[-1] == "\"":
@@ -34,8 +37,7 @@ def get_string(input_list: list, string: str = "") -> Union[Tuple[str, list], Er
 
 
 
-def __split(to_split: list, to_find: Union[str, list] = None) -> Union[Error, Tuple[list, list]]:
-    to_remove = [' ']
+def __split(to_split: list, to_find: Union[str, list, None] = None) -> Tuple[list, list]:
     try:
         head, *tail = to_split
     except:
@@ -44,7 +46,7 @@ def __split(to_split: list, to_find: Union[str, list] = None) -> Union[Error, Tu
         return [head], tail
 
     if head[0] == "\"":
-        print(head, "test")
+        # print(head, "test")
         if head[-1] != "\"" or len(head) <= 1:
             newHead, tail = get_string(tail)
             head = head + " " + newHead
@@ -70,10 +72,10 @@ def __split(to_split: list, to_find: Union[str, list] = None) -> Union[Error, Tu
         tmp = [head] + tmp
         return tmp, tail
 
-def split(to_split: list)-> Union[Error, list]:
+def split(to_split: list)-> list:
     return __split(to_split)[0]
 
-def preprocessor(file_contents: str) -> Union[list, Error]:
+def preprocessor(file_contents: str) -> list:
     # Convert to list
     input_list = file_contents.split()
     # print(input_list)
@@ -86,7 +88,7 @@ def preprocessor(file_contents: str) -> Union[list, Error]:
     return split_chars
 
 
-def tokenize(processed: list) -> Union[list, Error]:
+def tokenize(processed: list) -> list:
     return processed
 
 

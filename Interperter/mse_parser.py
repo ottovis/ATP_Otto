@@ -3,18 +3,24 @@ from typing import Union
 import operator
 import math
 
-from error_handler import *
-from symbols import *
-from lexer import split
+try:
+    from Interperter.mse_error_handler import *
+    from Interperter.symbols import *
+    from Interperter.lexer import split
+except:
+    from mse_error_handler import *
+    from symbols import *
+    from lexer import split
 
 
-def tree_builder(lexed: list, parsed: list = [], is_toplevel: bool = True, is_main: bool = True) -> Union[list, Error]:
+def tree_builder(lexed: list, parsed: list = [], is_toplevel: bool = True, is_main: bool = True) -> list:
     if len(lexed) == 0:
         return parsed
     head, *tail = lexed
 
     try:
-        head = int(head) # Make int if possible, this does break pylance's typechecking
+        # Make int if possible, this does seem to break pylance's typechecking
+        head = int(head)
     except:
         pass
 
@@ -46,12 +52,12 @@ def tree_builder(lexed: list, parsed: list = [], is_toplevel: bool = True, is_ma
             parsed.append(symb_assignment())
         elif head == '.':
             parsed.append(symb_dereference())
-        
+
         elif head == "^":
             if is_toplevel:
                 raise BreakFromTopLevelError
             parsed.append(symb_exit_loop())
-        
+
         elif head == '@':
             if is_main:
                 raise BreakFromMainError
@@ -63,15 +69,16 @@ def tree_builder(lexed: list, parsed: list = [], is_toplevel: bool = True, is_ma
             parsed.append(symb_call_macro(head[1]))
         else:
             parsed.append(symb_var(head))
-    else:
+    elif type(head) is list:
         if head[0][0] == '[':
             assert head[-1] == ']'
             split_head = split(head[1:-1])
-            parsed.append(symb_conditional_execution(tree_builder(split_head, [], False, is_main)))
+            parsed.append(symb_conditional_execution(
+                tree_builder(split_head, [], False, is_main)))
         elif head[0][0] == '(':
-            assert head[-1] == ')'
-            split_head = split(head[1:-1])
-            build = tree_builder(split_head, [], False, is_main)
+            assert head[-1] == ')', f"Expected ) but got {head[-1]}"
+            split_head = split(head[1:-1]) # remove the brackets
+            build = tree_builder(split_head, [], False, is_main) 
             parsed.append(symb_loop(build))
         elif head[0][0] == '#':
             assert head[-1] == '$'
@@ -82,14 +89,16 @@ def tree_builder(lexed: list, parsed: list = [], is_toplevel: bool = True, is_ma
             split_head = split(head[1:-1])
             build = tree_builder(split_head, [], is_toplevel, False)
             parsed.append(symb_macro(head[0][1], build))
+    else:
+        assert False, "This should never happen, last assert is broken"
 
     return tree_builder(tail, parsed, is_toplevel, is_main)
 
 
 def parser(lexed: list) -> list:
     parsed = tree_builder(lexed)
-    print("Printing symbols:")
-    for symbol in parsed:
-        print(symbol)
+    # print("Printing symbols:")
+    # for symbol in parsed:
+    #     print(symbol)
 
     return parsed

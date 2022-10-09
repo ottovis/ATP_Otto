@@ -2,10 +2,14 @@ import operator
 from typing import Union, Tuple, Any, List
 import math
 
-from error_handler import *
-from excecute import exec_unit
-from compiler import comp_unit
-
+try:
+    from Interperter.mse_error_handler import *
+    from Interperter.excecute import exec_unit
+    from Interperter.compiler import comp_unit
+except:
+    from mse_error_handler import *
+    from excecute import exec_unit
+    from compiler import comp_unit
 
 # base symbol class
 
@@ -82,7 +86,7 @@ class symb_output(symb_base):
         return "Symbol: " + self.symb_type + ": " + symb_output.content
 
     def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, Union[None, str]]:
-        print(stack.pop())
+        print(stack.pop(), end=' ')
         return 0, stack, var_dict, None
 
     def compile(self, code: dict, context: list) -> Tuple[dict, list]:
@@ -111,7 +115,7 @@ class symb_string(symb_base):
         if len(to_print) == 0:
             return
         head, *tail = to_print
-        print(head, end="\n")
+        print(head, end=" ")
         return self.print_rec(tail)
 
     def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, Union[None, str]]:
@@ -122,7 +126,7 @@ class symb_string(symb_base):
         name = "text" + str(len(code["main"]['strings']))
         code["main"
              ]['strings'].append(name + ": .asciz " + self.com_content)
-        print(code["main"]['strings'][-1])
+        # print(code["main"]['strings'][-1])
         code[context[-1]]['code'].append("LDR R0, =" + name)
         code, context = self.switch_default_stack(code, context)
         code[context[-1]]['code'].append("BL print_asciz")

@@ -20,4 +20,5 @@ SEARCH  :=
 # set RELATIVE to the next higher directory 
 # and defer to the Makefile.* there
 RELATIVE := ..
+SERIAL_PORT := COM11
 include $(RELATIVE)/Makefile.due

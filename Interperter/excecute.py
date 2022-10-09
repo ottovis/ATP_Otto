@@ -14,7 +14,7 @@ def exec_unit(to_exec: list, stack: list = [], var_dict: dict = {}, unit_type: s
     status, stack, var_dict, return_type = head.excecute(stack, var_dict)
     
     if not status == 0 or return_type == unit_type:
-        print("Exit by exit symb")
+        # print("Exit by exit symb")
         return status, stack, var_dict, None
     
     elif return_type is not None:

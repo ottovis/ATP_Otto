@@ -1,6 +1,12 @@
-from lexer import lexer
-from parser import parser
-from excecute import excecute
+from typing import Tuple
+try:
+    from Interperter.lexer import lexer
+    from Interperter.mse_parser import parser
+    from Interperter.excecute import excecute
+except:
+    from lexer import lexer
+    from mse_parser import parser
+    from excecute import excecute
 import sys
 
 
@@ -27,4 +33,5 @@ if __name__ == "__main__":
         print("Empty file!")
         exit(-1)
 
-    print("\n", "Exit code:", main(file_contents))
+    exit_code = main(file_contents)
+    print( )

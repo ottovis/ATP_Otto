@@ -17,12 +17,12 @@ if __name__ == "__main__":
         print("Please give exactly argument pointing to the file to be executed")
         exit(-1)
 
-    # try:
-    with open(sys.argv[1], mode='r') as f:
-        file_contents = f.read()
-    # except:
-    #     print("Try again with existing file")
-    #     exit(-2)
+    try:
+        with open(sys.argv[1], mode='r') as f:
+            file_contents = f.read()
+    except:
+        print("Try again with existing file")
+        exit(-2)
 
     if len(file_contents) == 0:
         print("Empty file!")
