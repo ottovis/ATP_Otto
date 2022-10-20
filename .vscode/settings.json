@@ -5,8 +5,12 @@
         "-s",
         "./Tests",
         "-p",
-        "*test.py"
+        "*_test.py"
     ],
     "python.testing.pytestEnabled": false,
-    "python.testing.unittestEnabled": true
+    "python.testing.unittestEnabled": true,
+    "python.analysis.typeCheckingMode": "basic",
+    "python.testing.pytestArgs": [
+        "Tests"
+    ]
 }

@@ -36,7 +36,8 @@ def tree_builder(lexed: list, parsed: list = [], is_toplevel: bool = True, is_ma
         elif head == '!':
             parsed.append(symb_output())
         elif head[0] == '\"':
-            assert head[-1] == '\"'
+            assert head[-1] == '\"', "String not closed"
+            print(head)
             parsed.append(symb_string(head))
         elif head == '+':
             parsed.append(symb_operator(operator.add))

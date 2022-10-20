@@ -43,9 +43,9 @@ class symb_int(symb_base):
     def __str__(self) -> str:
         return "Symbol: " + symb_int.symb_type + ": " + str(self.content)
 
-    def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, Union[None, str]]:
+    def excecute(self, output: str, stack: list, var_dict: dict) -> Tuple[str, int, list, dict, Union[None, str]]:
         stack.append(self.content)
-        return 0, stack, var_dict, None
+        return output, 0, stack, var_dict, None
 
     def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         code[context[-1]]['code'].append('MOV R0, #' + str(self.content))
@@ -60,15 +60,15 @@ class symb_input(symb_base):
     def __str__(self) -> str:
         return "Symbol: " + self.symb_type + ": " + symb_input.content
 
-    def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, Union[None, str]]:
+    def excecute(self, output: str, stack: list, var_dict: dict) -> Tuple[str, int, list, dict, Union[None, str]]:
         got = input("Input (int only): ")
         # ja ja, side effect, maar moet toch input krijgen. Zo functioneel mogelijk gedaan :)
         try:
             stack.append(int(got))
         except:
             print("Please give valid input")
-            return self.excecute(stack, var_dict)
-        return 0, stack, var_dict, None
+            return self.excecute(output, stack, var_dict)
+        return output, 0, stack, var_dict, None
 
     def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         code, context = self.switch_default_stack(code, context)
@@ -85,9 +85,11 @@ class symb_output(symb_base):
     def __str__(self) -> str:
         return "Symbol: " + self.symb_type + ": " + symb_output.content
 
-    def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, Union[None, str]]:
-        print(stack.pop(), end=' ')
-        return 0, stack, var_dict, None
+    def excecute(self, output: str, stack: list, var_dict: dict) -> Tuple[str, int, list, dict, Union[None, str]]:
+        tmp = stack.pop()
+        print(tmp, end=' ')
+        output += str(tmp) + ' '
+        return output, 0, stack, var_dict, None
 
     def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         code[context[-1]]['code'].append(r"POP {R0}")
@@ -111,16 +113,17 @@ class symb_string(symb_base):
     def __str__(self) -> str:
         return "Symbol: " + self.symb_type + ": " + str(self.content)
 
-    def print_rec(self, to_print: list) -> None:
+    def print_rec(self, to_print: list, output: str) -> str:
         if len(to_print) == 0:
-            return
+            return output
         head, *tail = to_print
+        output += str(head) + ' '
         print(head, end=" ")
-        return self.print_rec(tail)
+        return self.print_rec(tail, output)
 
-    def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, Union[None, str]]:
-        self.print_rec(self.content)
-        return 0, stack, var_dict, None
+    def excecute(self, output: str, stack: list, var_dict: dict) -> Tuple[str, int, list, dict, Union[None, str]]:
+        output = self.print_rec(self.content, output)
+        return output, 0, stack, var_dict, None
 
     def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         name = "text" + str(len(code["main"]['strings']))
@@ -137,20 +140,20 @@ class symb_string(symb_base):
 class symb_operator(symb_base):
     symb_type = "operator"
 
-    def __init__(self, operator_to_exec: operator) -> None:
+    def __init__(self, operator_to_exec: Any) -> None:
         self.content: Any
         self.content = operator_to_exec
 
     def __str__(self) -> str:
-        return "Symbol: " + symb_int.symb_type + ": " + str(self.content)
+        return "Symbol: " + self.symb_type + ": " + str(self.content)
 
-    def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, Union[None, str]]:
+    def excecute(self, output: str, stack: list, var_dict: dict) -> Tuple[str, int, list, dict, Union[None, str]]:
         *stack, a, b = stack
         try:
             stack.append(math.floor(self.content(a, b)))
         except:
             raise InvalidOperatorError(a, b, self.content)
-        return 0, stack, var_dict, None
+        return output, 0, stack, var_dict, None
 
     def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         code[context[-1]]['code'].append("POP {R0, R1}")
@@ -179,15 +182,15 @@ class symb_stop(symb_base):
     content = "$"
 
     def __str__(self) -> str:
-        return "Symbol: " + symb_stop.symb_type + ": " + symb_stop.content
+        return "Symbol: " + self.symb_type + ": " + symb_stop.content
 
     # breaks loop
-    def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, bool]:
-        assert False, "This symbol is unnecessary"
-        return 0, stack, var_dict, True
+    def excecute(self, output: str, stack: list, var_dict: dict) -> Tuple[str, int, list, dict, Union[None, str]]:
+        assert False, "This symbol should never be executed"
+        return output, 0, stack, var_dict, True
 
     def compile(self, code: dict, context: list) -> dict:
-        assert False, "This symbol is unnecessary"
+        assert False, "This symbol should never be compiled"
         return code, context
 
 
@@ -198,10 +201,11 @@ class symb_dereference(symb_base):
     def __str__(self) -> str:
         return "Symbol: " + symb_dereference.symb_type + ": " + symb_dereference.content
 
-    def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, Union[None, str]]:
+    def excecute(self, output: str, stack: list, var_dict: dict) -> Tuple[str, int, list, dict, Union[None, str]]:
         *stack, a = stack
+        assert a in var_dict, "Dereferencing non existing var"
         stack.append(var_dict[a])
-        return 0, stack, var_dict, None
+        return output, 0, stack, var_dict, None
 
     def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         code[context[-1]]['code'].append(r"POP {R0}")
@@ -222,14 +226,14 @@ class symb_conditional_execution(symb_base):
     def __str__(self) -> str:
         return "Symbol: " + symb_conditional_execution.symb_type + ": " + str(self.content)
 
-    def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, Union[None, str]]:
+    def excecute(self, output: str, stack: list, var_dict: dict) -> Tuple[str, int, list, dict, Union[None, str]]:
         popped = stack.pop()
         if popped == 0:
-            status, stack, var_dict, return_type = exec_unit(
-                self.content, stack, var_dict, self.symb_type)
-            return status, stack, var_dict, return_type
+            output, status, stack, var_dict, return_type = exec_unit(
+                self.content, output, stack, var_dict, self.symb_type)
+            return output, status, stack, var_dict, return_type
 
-        return 0, stack, var_dict, None
+        return output, 0, stack, var_dict, None
 
     def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         if self.callsign in code:
@@ -280,15 +284,15 @@ class symb_loop(symb_base):
     def __str__(self) -> str:
         return "Symbol: " + symb_loop.symb_type + ": " + str(self.content)
 
-    def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, Union[None, str]]:
-        status, stack, var_dict, return_type = exec_unit(
-            self.content, stack, var_dict)
+    def excecute(self, output: str, stack: list, var_dict: dict) -> Tuple[str, int, list, dict, Union[None, str]]:
+        output, status, stack, var_dict, return_type = exec_unit(
+            self.content, output, stack, var_dict)
         if return_type is self.symb_type:
-            return status, stack, var_dict, None
+            return output, status, stack, var_dict, None
         elif return_type is not None:
-            return status, stack, var_dict, return_type
+            return output, status, stack, var_dict, return_type
         else:
-            return self.excecute(stack, var_dict)
+            return self.excecute(output, stack, var_dict)
 
     def compile(self, code: dict, context: list) -> Tuple[dict, list]:
 
@@ -313,8 +317,8 @@ class symb_exit_loop(symb_base):
     def __str__(self) -> str:
         return "Symbol: " + symb_exit_loop.symb_type + ": " + symb_exit_loop.content
 
-    def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, str]:
-        return 0, stack, var_dict, symb_loop.symb_type
+    def excecute(self, output: str, stack: list, var_dict: dict) -> Tuple[str, int, list, dict, Union[None, str]]:
+        return output, 0, stack, var_dict, symb_loop.symb_type
 
     def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         if context[-1][0:4] == "loop":
@@ -338,10 +342,10 @@ class symb_macro(symb_base):
     def __str__(self) -> str:
         return "Symbol: " + symb_macro.symb_type + ": " + str(self.callsign) + ", codeblock: " + str(self.content)
 
-    def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, Union[None, str]]:
+    def excecute(self, output: str, stack: list, var_dict: dict) -> Tuple[str, int, list, dict, Union[None, str]]:
         if self.callsign not in var_dict:
             var_dict[self.callsign] = self
-        return exec_unit(self.content, stack, var_dict, self.symb_type)
+        return exec_unit(self.content, output, stack, var_dict, self.symb_type)
 
     def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         if self.callsign in code:
@@ -376,8 +380,8 @@ class symb_exit_macro(symb_base):
     def __str__(self) -> str:
         return "Symbol: " + symb_exit_macro.symb_type + ": " + symb_exit_macro.content
 
-    def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, Union[None, str]]:
-        return 0, stack, var_dict, symb_macro.symb_type
+    def excecute(self, output: str, stack: list, var_dict: dict) -> Tuple[str, int, list, dict, Union[None, str]]:
+        return output, 0, stack, var_dict, symb_macro.symb_type
 
     def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         assert context[-1] != "main", "Attempted to use @ to exit main"
@@ -395,8 +399,8 @@ class symb_call_macro(symb_base):
     def __str__(self) -> str:
         return "Symbol: " + symb_call_macro.symb_type + ": " + str(self.callsign)
 
-    def excecute(self, stack: List[str], var_dict: dict) -> Tuple[int, list, dict, Union[None, str]]:
-        return var_dict[self.callsign].excecute(stack, var_dict)
+    def excecute(self, output: str, stack: list, var_dict: dict) -> Tuple[str, int, list, dict, Union[None, str]]:
+        return var_dict[self.callsign].excecute(output, stack, var_dict)
 
     def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         code[context[-1]]["code"].append("BL " + self.callsign)
@@ -412,9 +416,9 @@ class symb_var(symb_base):
     def __str__(self) -> str:
         return "Symbol: " + symb_var.symb_type + ": " + str(self.content)
 
-    def excecute(self, stack: list, var_dict: dict) -> Tuple[int, list, dict, Union[None, str]]:
+    def excecute(self, output: str, stack: list, var_dict: dict) -> Tuple[str, int, list, dict, Union[None, str]]:
         stack.append(self.content)
-        return 0, stack, var_dict, None
+        return output, 0, stack, var_dict, None
 
     def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         if self.content not in code["assignments"]:
@@ -433,21 +437,27 @@ class symb_assignment(symb_base):
     def __str__(self) -> str:
         return "Symbol: " + symb_assignment.symb_type + ": " + symb_assignment.content
 
-    def excecute(self, stack: list, var_dict: dict) -> Union[Tuple[int, list, dict, Union[None, str]], Error]:
+    def excecute(self, output: str, stack: list, var_dict: dict) -> Tuple[str, int, list, dict, Union[None, str]]:
         *stack, b, a = stack
-        try:
-            int(b)
-        except:
-            raise InvalidAssignmentError(a, b)
-        try:
-            int(a)
-            raise InvalidAssignmentError(a, b)
-        except InvalidAssignmentError:
-            assert False
-        except:
-            pass
+
+        # Assert that a is an int and b is a string. Cannot be convertable to int
+        assert type(a) == str, "Cannot assign a string to a variable" 
+        assert type(b) == int, "Cannot assign to a int"
+
+        # try:
+        #     int(b)
+        # except:
+        #     raise InvalidAssignmentError(a, b)
+        # try:
+        #     int(a)
+        #     raise InvalidAssignmentError(a, b)
+        # except InvalidAssignmentError:
+        #     assert False
+        # except:
+        #     pass
+
         var_dict[a] = b
-        return 0, stack, var_dict, None
+        return output, 0, stack, var_dict, None
 
     def compile(self, code: dict, context: list) -> Tuple[dict, list]:
         code[context[-1]]["code"].append("POP {R0, R1}")

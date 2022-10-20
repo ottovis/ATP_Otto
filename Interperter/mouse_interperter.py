@@ -10,11 +10,11 @@ except:
 import sys
 
 
-def main(file_contents: str) -> int:
+def main(file_contents: str) -> Tuple[str, int]:
     lexed = lexer(file_contents)
     parsed = parser(lexed)
-    exit_code = excecute(parsed)
-    return exit_code
+    output, exit_code = excecute(parsed)
+    return output, exit_code
 
 
 if __name__ == "__main__":

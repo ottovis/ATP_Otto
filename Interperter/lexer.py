@@ -11,7 +11,7 @@ except:
     from mse_error_handler import *
     from symbols import *
 
-# def get_block(input_list: list, to_find: str, output_list: list = []) -> Union[Tuple[list, list], Error]:
+# def get_block(input_list: list, to_find: str, output_list: list = []) -> Tuple[list, list]:
 #     if (len(input_list) == 0):
 #         raise CodeBlockNotClosedError(output_list)
 #     head, *tail = input_list
@@ -38,10 +38,12 @@ def get_string(input_list: list, string: str = "") -> Tuple[str, list]:
 
 
 def __split(to_split: list, to_find: Union[str, list, None] = None) -> Tuple[list, list]:
+    end_signs = [")", "]", "$"]
     try:
         head, *tail = to_split
     except:
         assert False
+    assert head == to_find or head not in end_signs, "Found closing sign without opening sign"
     if len(tail) == 0 or head == to_find:
         return [head], tail
 
@@ -66,7 +68,7 @@ def __split(to_split: list, to_find: Union[str, list, None] = None) -> Tuple[lis
         head = [saved] + head
 
     if to_find is None:
-        return [head] + __split(tail, to_find)[0], []
+        return [head] + __split(tail)[0], []
     else:
         tmp, tail = __split(tail, to_find)
         tmp = [head] + tmp
@@ -76,6 +78,10 @@ def split(to_split: list)-> list:
     return __split(to_split)[0]
 
 def preprocessor(file_contents: str) -> list:
+    assert type(file_contents) is str
+    assert len(file_contents) > 0, "File is empty"
+    assert file_contents[-2:] == "$$", "File must end with $$"
+
     # Convert to list
     input_list = file_contents.split()
     # print(input_list)
@@ -96,3 +102,6 @@ def lexer(file_contents: str) -> list:
     processed = preprocessor(file_contents)
     tokenized = tokenize(processed)
     return tokenized
+
+if __name__ == "__main__":
+    preprocessor("1 2 ( [ 3 4 5 ] )")
