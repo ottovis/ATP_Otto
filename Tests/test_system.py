@@ -18,3 +18,6 @@ class TestInterperter(unittest.TestCase):
     def test_interperter_fib(self):
         self.assertEqual(main("\"Printing first 10 in fibonacci:\" 19 todo = 1 1 \"0\" #A to_save = to_print = to_save . to_save . to_print . + to_print . ! todo . 1 - todo = todo . [ @ ] ~A @ $ $$")[
                          0], "Printing first 10 in fibonacci: 0 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597 2584 4181 ")
+
+    def test_interperter_block_termination(self):
+        self.assertEqual(main("0 [ \"Hello world\" ] $$")[0], "Hello world ")

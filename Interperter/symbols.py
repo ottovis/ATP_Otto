@@ -88,9 +88,10 @@ class symb_output(symb_base):
         return "Symbol: " + self.symb_type + ": " + symb_output.content
 
     def excecute(self, output: str, stack: list, var_dict: dict) -> Tuple[str, int, list, dict, Union[None, str]]:
-        tmp = stack.pop()
-        print(tmp, end=' ')
-        output += str(tmp) + ' '
+        assert len(stack) > 0, "Trying to pop from stack, but its empty"
+        *stack, popped = stack
+        print(popped, end=' ')
+        output += str(popped) + ' '
         return output, 0, stack, var_dict, None
 
     def compile(self, code: dict, context: list) -> Tuple[dict, list]:
@@ -150,6 +151,7 @@ class symb_operator(symb_base):
         return "Symbol: " + self.symb_type + ": " + str(self.content)
 
     def excecute(self, output: str, stack: list, var_dict: dict) -> Tuple[str, int, list, dict, Union[None, str]]:
+        assert len(stack) >= 2, "Trying to pop from stack for operator, but it holds led than 2 elements"
         *stack, a, b = stack
         try:
             stack.append(math.floor(self.content(a, b)))
@@ -204,6 +206,7 @@ class symb_dereference(symb_base):
         return "Symbol: " + symb_dereference.symb_type + ": " + symb_dereference.content
 
     def excecute(self, output: str, stack: list, var_dict: dict) -> Tuple[str, int, list, dict, Union[None, str]]:
+        assert len(stack) > 0, "Trying to pop from stack, but its empty"
         *stack, a = stack
         assert a in var_dict, "Dereferencing non existing var"
         stack.append(var_dict[a])
@@ -229,7 +232,8 @@ class symb_conditional_execution(symb_base):
         return "Symbol: " + symb_conditional_execution.symb_type + ": " + str(self.content)
 
     def excecute(self, output: str, stack: list, var_dict: dict) -> Tuple[str, int, list, dict, Union[None, str]]:
-        popped = stack.pop()
+        assert len(stack) > 0, "Trying to pop from stack, but its empty"
+        *stack, popped = stack
         if popped == 0:
             output, status, stack, var_dict, return_type = exec_unit(
                 self.content, output, stack, var_dict, self.symb_type)
@@ -402,6 +406,7 @@ class symb_call_macro(symb_base):
         return "Symbol: " + symb_call_macro.symb_type + ": " + str(self.callsign)
 
     def excecute(self, output: str, stack: list, var_dict: dict) -> Tuple[str, int, list, dict, Union[None, str]]:
+        assert self.callsign in var_dict, "Macro not defined"
         return var_dict[self.callsign].excecute(output, stack, var_dict)
 
     def compile(self, code: dict, context: list) -> Tuple[dict, list]:
@@ -440,6 +445,7 @@ class symb_assignment(symb_base):
         return "Symbol: " + symb_assignment.symb_type + ": " + symb_assignment.content
 
     def excecute(self, output: str, stack: list, var_dict: dict) -> Tuple[str, int, list, dict, Union[None, str]]:
+        assert len(stack) >= 2, "Not enough values on stack to assign"
         *stack, b, a = stack
 
         # Assert that a is an int and b is a string. Cannot be convertable to int

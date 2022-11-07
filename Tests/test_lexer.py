@@ -10,6 +10,8 @@ class TestLexer(unittest.TestCase):
         self.assertRaises(AssertionError, lexer, "test")
         self.assertRaises(AssertionError, lexer, "( [ ) ]")
         self.assertRaises(StringNotClosedError, lexer, "test \"test test $$")
+        self.assertRaises(AssertionError, lexer, "[ $$")
+        self.assertRaises(AssertionError, lexer, [["[ ]"], "$$"])
 
     def test_lexer_io(self):
         self.assertEqual(lexer("test $$"), ["test", "$$"])

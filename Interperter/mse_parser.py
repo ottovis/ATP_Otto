@@ -85,7 +85,7 @@ def tree_builder(lexed: list, parsed: Union[list, None] = None, is_toplevel: Uni
         else:
             parsed.append(symb_var(head))
     elif type(head) is list:
-        if head[0][0] == '[':
+        if head[0] == '[':
             assert head[-1] == ']', f"Expected ] but got {head[-1]}, somehow the lexer is broken"
             split_head = split(head[1:-1])
             parsed.append(symb_conditional_execution(

@@ -2,13 +2,14 @@ import unittest
 from Interperter.mse_parser import parser
 from Interperter.symbols import *
 
-
-
-
 class TestParser(unittest.TestCase):
     def test_parser_asserts(self):
         self.assertRaises(AssertionError, parser, [" ", "$$"])
         self.assertRaises(AssertionError, parser, ["2.9", "$$"])
+        self.assertRaises(BreakFromMainError, parser, ["@", "$$"])
+        self.assertRaises(BreakFromTopLevelError, parser, ["^", "$$"])
+        self.assertRaises(AssertionError, parser, [["["], "$$"])
+        self.assertRaises(AssertionError, parser, [["[", "]"], "$$"])
 
     def test_parser_int(self):
         self.assertEqual(parser(["2", "$$"])[0].symb_type, symb_int(2).symb_type)

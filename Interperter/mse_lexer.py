@@ -41,10 +41,8 @@ def get_string(input_list: list, string: Union[str, None] = None) -> Tuple[str, 
 
 def __split(to_split: list, to_find: Union[str, list, None] = None) -> Tuple[list, list]:
     end_signs = [")", "]", "$"]
-    try:
-        head, *tail = to_split
-    except:
-        assert False
+    assert len(to_split) > 0, "Block not closed or empty"
+    head, *tail = to_split
     assert head == to_find or head not in end_signs, "Found closing sign without opening sign"
     if len(tail) == 0 or head == to_find:
         return [head], tail
@@ -106,4 +104,4 @@ def lexer(file_contents: str) -> list:
     return tokenized
 
 if __name__ == "__main__":
-    preprocessor("1 2 ( [ 3 4 5 ] )")
+    preprocessor("1 2 ( [ 3 4 5 ] ) $$")
