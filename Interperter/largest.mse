@@ -1,0 +1,1 @@
+"Please enter positive numbers, then I will tell you which one is the largest. 0 will quit the program!" 1 high = ( ? new = new . [ ^ ] new . newcopy = high . highcopy = ( highcopy . 1 - highcopy = highcopy . [ new . high = ^ ] newcopy . 1 - newcopy = newcopy . [ ^ ] ) ) "Largest Number: " high . ! "!" $$

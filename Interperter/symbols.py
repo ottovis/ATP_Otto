@@ -5,14 +5,17 @@ import math
 try:
     from Interperter.mse_error_handler import *
     from Interperter.excecute import exec_unit
-    from Interperter.compiler import comp_unit
+    # from Compiler.compiler import comp_unit
 except:
     from mse_error_handler import *
     from excecute import exec_unit
-    from compiler import comp_unit
+    # from Compiler.compiler import comp_unit
 
 # base symbol class
 
+# mock comp_unit function, as its no longer needed for the exercise
+def comp_unit(content: list, code: dict, context: list) -> Tuple[list, dict]:
+    return context, code
 
 class symb_base:
 
@@ -37,7 +40,6 @@ class symb_int(symb_base):
 
     def __init__(self, interger: int) -> None:
         super(symb_base)
-        assert type(interger) == int, "Int should be of type int"
         self.content = interger
 
     def __str__(self) -> str:
@@ -441,8 +443,8 @@ class symb_assignment(symb_base):
         *stack, b, a = stack
 
         # Assert that a is an int and b is a string. Cannot be convertable to int
-        assert type(a) == str, "Cannot assign a string to a variable" 
-        assert type(b) == int, "Cannot assign to a int"
+        assert type(a) == str, "Cannot assign to a int, got " + str(a)  + " and " + str(b)
+        assert type(b) == int, "Cannot assign a string to a variable, got " + str(b) + " and " + str(a)
 
         # try:
         #     int(b)

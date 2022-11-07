@@ -3,9 +3,14 @@ from typing import Tuple, Union
 
 
 
-def exec_unit(to_exec: list, output: str = '', stack: list = [], var_dict: dict = {}, unit_type: str = "main") -> Tuple[str, int, list, dict, Union[None, str]]:
+def exec_unit(to_exec: list, output: str = '', stack: Union[list, None] = None, var_dict: Union[dict, None] = None, unit_type: str = "main") -> Tuple[str, int, list, dict, Union[None, str]]:
     # print("Stack:", stack)
     # print("Dict:", var_dict)
+    if stack is None:
+        stack = []
+    if var_dict is None:
+        var_dict = {}
+
     if len(to_exec) == 0:
         return output, 0, stack, var_dict, None
 

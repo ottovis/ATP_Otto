@@ -1,1 +1,0 @@
-1 2 3 10 ( "Outer loop" 1 - ( "Inner loop" N . 1 - [ ^ ] )  [ ^ ] ) $$

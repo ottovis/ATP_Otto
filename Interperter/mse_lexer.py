@@ -24,7 +24,9 @@ except:
 #         return get_block(tail, to_find, output_list)
 
 
-def get_string(input_list: list, string: str = "") -> Tuple[str, list]:
+def get_string(input_list: list, string: Union[str, None] = None) -> Tuple[str, list]:
+    if string is None:
+        string = ""
     if (len(input_list) == 0):
         raise StringNotClosedError(string)
     # print(input_list)
